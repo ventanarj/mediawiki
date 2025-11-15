@@ -1,0 +1,20 @@
+{{- if .Values.route.enabled }}
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: {{ include "mediawiki.fullname" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "mediawiki.name" . }}
+    helm.sh/chart: {{ include "mediawiki.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: Helm
+spec:
+  host: {{ .Values.route.host }}
+  to:
+    kind: Service
+    name: {{ include "mediawiki.fullname" . }}
+  port:
+    targetPort: http
+  tls:
+    termination: edge
+{{- end }}

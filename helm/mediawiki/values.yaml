@@ -1,0 +1,46 @@
+image:
+  repository: mediawiki-custom
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 80
+
+deployment:
+  replicas: 1
+  resources: {}
+
+database:
+  host: mediawiki-mysql
+  name: mediawiki
+  port: 3306
+
+persistence:
+  enabled: true
+  accessModes:
+    - ReadWriteOnce
+  size: 5Gi
+  mountPath: /var/www/html/images
+
+route:
+  enabled: true
+  host: mediawiki.apps.example.com
+
+localSettings: |
+  <?php
+  $wgSitename = "MediaWiki";
+  $wgScriptPath = "";
+  $wgArticlePath = "/$1";
+  $wgServer = "https://mediawiki.apps.example.com";
+  $wgDBtype = "mysql";
+  $wgDBserver = getenv('MEDIAWIKI_DB_HOST');
+  $wgDBname = getenv('MEDIAWIKI_DB_NAME');
+  $wgDBuser = getenv('MEDIAWIKI_DB_USER');
+  $wgDBpassword = getenv('MEDIAWIKI_DB_PASSWORD');
+  $wgShellLocale = "C.UTF-8";
+  $wgEmergencyContact = "admin@example.com";
+  $wgPasswordSender = "admin@example.com";
+  $wgEnableUploads = true;
+  $wgUsePathInfo = true;
+  $wgSecretKey = getenv('MEDIAWIKI_SECRET_KEY');

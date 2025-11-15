@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "mediawiki.fullname" . }}-config
+  labels:
+    app.kubernetes.io/name: {{ include "mediawiki.name" . }}
+    helm.sh/chart: {{ include "mediawiki.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: Helm
+data:
+  LocalSettings.php: |
+{{- .Values.localSettings | nindent 4 }}
