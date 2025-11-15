@@ -1,2 +1,2 @@
 # mediawiki
-Repositorio para Mediawiki no poenshift
+Repositorio para Mediawiki no poenshift no trf
