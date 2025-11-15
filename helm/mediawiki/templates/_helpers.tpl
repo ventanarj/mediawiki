@@ -14,3 +14,16 @@
 {{- define "mediawiki.chart" -}}
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" -}}
 {{- end -}}
+
+{{- define "mediawiki.componentName" -}}
+{{- $root := index . 0 -}}
+{{- $component := index . 1 -}}
+{{- printf "%s-%s" (include "mediawiki.fullname" $root) $component | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
+{{- define "mediawiki.labels" -}}
+app.kubernetes.io/name: {{ include "mediawiki.name" . }}
+helm.sh/chart: {{ include "mediawiki.chart" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+app.kubernetes.io/managed-by: Helm
+{{- end -}}

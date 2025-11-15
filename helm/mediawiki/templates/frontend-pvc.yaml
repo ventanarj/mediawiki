@@ -1,0 +1,15 @@
+{{- if .Values.frontend.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "mediawiki.componentName" (list . "frontend-data") }}
+  labels:
+{{ include "mediawiki.labels" . | indent 4 }}
+    app.kubernetes.io/component: frontend
+spec:
+  accessModes:
+{{ toYaml .Values.frontend.persistence.accessModes | indent 4 }}
+  resources:
+    requests:
+      storage: {{ .Values.frontend.persistence.size }}
+{{- end }}
