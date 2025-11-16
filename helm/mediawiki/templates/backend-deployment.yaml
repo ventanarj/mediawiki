@@ -1,0 +1,54 @@
+{{- if .Values.backend.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "mediawiki.componentName" (list . "backend") }}
+  labels:
+{{ include "mediawiki.labels" . | indent 4 }}
+    app.kubernetes.io/component: backend
+spec:
+  replicas: {{ .Values.backend.replicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/name: {{ include "mediawiki.name" . }}
+      app.kubernetes.io/component: backend
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/name: {{ include "mediawiki.name" . }}
+        app.kubernetes.io/component: backend
+    spec:
+      containers:
+        - name: mediawiki-backend
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          envFrom:
+            - secretRef:
+                name: {{ include "mediawiki.componentName" (list . "db-credentials") }}
+          env:
+            - name: MEDIAWIKI_DB_HOST
+              value: {{ include "mediawiki.componentName" (list . "database") }}
+            - name: MEDIAWIKI_DB_PORT
+              value: "{{ .Values.database.service.port }}"
+            - name: MEDIAWIKI_REDIS_HOST
+              value: {{ include "mediawiki.componentName" (list . "redis") }}
+            - name: MEDIAWIKI_REDIS_PORT
+              value: "{{ .Values.redis.service.port }}"
+            - name: MEDIAWIKI_ROLE
+              value: backend
+            - name: MEDIAWIKI_ENVIRONMENT
+              value: {{ .Values.global.environment | quote }}
+          ports:
+            - containerPort: 80
+              name: http
+          volumeMounts:
+            - name: localsettings
+              mountPath: /config/LocalSettings.php
+              subPath: LocalSettings.php
+      volumes:
+        - name: localsettings
+          configMap:
+            name: {{ include "mediawiki.componentName" (list . "config") }}
+{{- end }}

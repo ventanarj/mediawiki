@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "mediawiki.componentName" (list . "frontend") }}
+  labels:
+{{ include "mediawiki.labels" . | indent 4 }}
+    app.kubernetes.io/component: frontend
+spec:
+  replicas: {{ .Values.frontend.replicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/name: {{ include "mediawiki.name" . }}
+      app.kubernetes.io/component: frontend
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/name: {{ include "mediawiki.name" . }}
+        app.kubernetes.io/component: frontend
+    spec:
+      containers:
+        - name: mediawiki-frontend
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          envFrom:
+            - secretRef:
+                name: {{ include "mediawiki.componentName" (list . "db-credentials") }}
+          env:
+            - name: MEDIAWIKI_DB_HOST
+              value: {{ include "mediawiki.componentName" (list . "database") }}
+            - name: MEDIAWIKI_DB_PORT
+              value: "{{ .Values.database.service.port }}"
+            - name: MEDIAWIKI_REDIS_HOST
+              value: {{ include "mediawiki.componentName" (list . "redis") }}
+            - name: MEDIAWIKI_REDIS_PORT
+              value: "{{ .Values.redis.service.port }}"
+            - name: MEDIAWIKI_ROLE
+              value: frontend
+            - name: MEDIAWIKI_ENVIRONMENT
+              value: {{ .Values.global.environment | quote }}
+            - name: MEDIAWIKI_PUBLIC_URL
+              value: https://{{ .Values.global.url }}
+          ports:
+            - containerPort: 80
+              name: http
+          volumeMounts:
+            - name: localsettings
+              mountPath: /config/LocalSettings.php
+              subPath: LocalSettings.php
+{{- if .Values.frontend.persistence.enabled }}
+            - name: uploads
+              mountPath: {{ .Values.frontend.persistence.mountPath }}
+{{- end }}
+      volumes:
+        - name: localsettings
+          configMap:
+            name: {{ include "mediawiki.componentName" (list . "config") }}
+{{- if .Values.frontend.persistence.enabled }}
+        - name: uploads
+          persistentVolumeClaim:
+            claimName: {{ include "mediawiki.componentName" (list . "frontend-data") }}
+{{- end }}

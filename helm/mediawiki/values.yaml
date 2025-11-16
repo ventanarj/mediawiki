@@ -1,0 +1,89 @@
+global:
+  url: mediawiki.trf2.jus.br
+  environment: dev
+
+image:
+  repository: mediawiki-custom
+  tag: latest
+  pullPolicy: IfNotPresent
+
+frontend:
+  replicas: 1
+  service:
+    type: ClusterIP
+    port: 80
+  route:
+    enabled: true
+    host: mediawiki.trf2.jus.br
+  persistence:
+    enabled: true
+    accessModes:
+      - ReadWriteOnce
+    size: 5Gi
+    mountPath: /var/www/html/images
+
+backend:
+  enabled: true
+  replicas: 1
+  service:
+    type: ClusterIP
+    port: 8080
+
+secrets:
+  mediawiki:
+    dbUser: mediawiki
+    dbPassword: changeme
+    dbName: mediawiki
+    secretKey: changeme
+
+database:
+  image:
+    repository: mysql
+    tag: "8.0"
+    pullPolicy: IfNotPresent
+  service:
+    port: 3306
+  persistence:
+    accessModes:
+      - ReadWriteOnce
+    size: 10Gi
+  auth:
+    username: mediawiki
+    password: changeme
+    rootPassword: changeme
+    database: mediawiki
+
+redis:
+  image:
+    repository: redis
+    tag: "7"
+    pullPolicy: IfNotPresent
+  service:
+    port: 6379
+
+localSettings: |
+  <?php
+  $wgSitename = "MediaWiki ({{ .Values.global.environment }})";
+  $wgScriptPath = "";
+  $wgArticlePath = "/$1";
+  $wgServer = "https://{{ .Values.global.url }}";
+  $wgDBtype = "mysql";
+  $wgDBserver = getenv('MEDIAWIKI_DB_HOST');
+  $wgDBname = getenv('MEDIAWIKI_DB_NAME');
+  $wgDBuser = getenv('MEDIAWIKI_DB_USER');
+  $wgDBpassword = getenv('MEDIAWIKI_DB_PASSWORD');
+  $wgDBport = getenv('MEDIAWIKI_DB_PORT');
+  $wgShellLocale = "C.UTF-8";
+  $wgEmergencyContact = "admin@example.com";
+  $wgPasswordSender = "admin@example.com";
+  $wgEnableUploads = true;
+  $wgUsePathInfo = true;
+  $wgSecretKey = getenv('MEDIAWIKI_SECRET_KEY');
+  $wgMainCacheType = CACHE_REDIS;
+  $wgRedisServers = [
+    [
+      'host' => getenv('MEDIAWIKI_REDIS_HOST'),
+      'port' => intval(getenv('MEDIAWIKI_REDIS_PORT')),
+      'persistent' => true,
+    ]
+  ];
